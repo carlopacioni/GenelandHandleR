@@ -4,7 +4,7 @@ Title: An R package to support analyses with Geneland
 Version: 0.1.0.999
 Date: `r Sys.Date()`
 Author: Carlo Pacioni
-Maintainer: carlo.pacioni@gmail.com
+Maintainer: Carlo Pacioni <carlo.pacioni@gmail.com>
 Description: An R package to run Geneland in parallel, conduct MCMC diagnostics 
     and plot probability of membership as well as maps of sample assignment to clusters.
 License: GPL-3
@@ -22,4 +22,4 @@ Suggests:
     roxygen2,
     testthat
 VignetteBuilder: knitr
-RoxygenNote: 6.1.1
+RoxygenNote: 7.0.2
