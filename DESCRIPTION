@@ -1,0 +1,25 @@
+Package: GenelandHandleR
+Type: Package
+Title: An R package to support analyses with Geneland
+Version: 0.1.0.999
+Date: `r Sys.Date()`
+Author: Carlo Pacioni
+Maintainer: carlo.pacioni@gmail.com
+Description: An R package to run Geneland in parallel, conduct MCMC diagnostics 
+    and plot probability of membership as well as maps of sample assignment to clusters.
+License: GPL-3
+Encoding: UTF-8
+LazyData: true
+Imports:
+    data.table (>= 1.11.4),
+    ggplot2,
+    coda
+Suggests:
+    geneland,
+    knitr,
+    rmarkdown,
+    devtools,
+    roxygen2,
+    testthat
+VignetteBuilder: knitr
+RoxygenNote: 6.1.1
