@@ -1,0 +1,138 @@
+---
+title: "Run Geneland: worked example"
+author: "Carlo Pacioni"
+date: "`r Sys.Date()`"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Vignette Title}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+
+```{r, fig.width=7}
+library(readxl)
+library(sp)
+library(rgdal)
+library(GenelandHandleR)
+
+exa_gen <- system.file("extdata", "hog_gen.txt", package = "GenelandHandleR")
+exa_coords <- system.file("extdata", "hog_coords.txt", package = "GenelandHandleR")
+exa_null <- system.file("extdata", "hog_null.csv", package = "GenelandHandleR")
+
+
+root.dir <- tempdir()
+
+#### Set up Geneland ####
+# read genotypes
+gen<-read.table(exa_gen, na.string=0, header = T, row.names = 1)
+ID<-row.names(gen)
+
+# set up coordinate data frame
+coords_dec<-read.table(exa_coords, head=T, row.names = 1)
+names(coords_dec)
+
+coordinates(coords_dec) <- c("Long", "Lat" )
+proj4string(coords_dec) <- CRS("+proj=longlat +datum=WGS84") 
+
+# Change coordinates to UTM
+coords <- spTransform(coords_dec, CRS("+proj=utm +zone=55 ellps=GDA94"))
+coords <-as.data.frame(coords)
+
+# Null matrix for Geneland
+null <- as.matrix(read.csv(exa_null))
+#------------------------------------------------------------------------------#
+#### Parallele execution of Geneland ####
+
+nrun <- 2 # Number of parallel runs
+burnin<-100
+npopmax<-20 # K max
+niter<-200 # Iterations
+nthin<-1 # Thinning
+npopi<-6
+main.dir<-"corr_null"
+
+rparGeneland <- run_paral_geneland(nrun=nrun, ncores=NULL, 
+                                   model="Correlated", 
+                                   main.dir=main.dir, spatial=TRUE,
+                                   gen, coords, jitter=20000, path=root.dir,
+                                   burnin=burnin, niter=niter, nthin=nthin,
+                                   npopmax=npopmax, npopinit=npopi, npopmin=1, 
+                                   nullMatrix = null)
+
+#### Post-process ####
+folders <- rparGeneland$Output_paths
+
+# Select top run
+TopRun <- rparGeneland$SummaryReps[1,run]
+K <- rparGeneland$SummaryReps[1, K]
+path.run <- paste0(folders[TopRun], "/")
+
+# Bar plots
+# order by long
+barProb <- PlotProbMembership(path.mcmc=folders[TopRun], pal="Set1", orderBy="X")
+barProb
+
+# or order by pop IDs from external file (samples have to be in the same order)
+exa_meta <- system.file("extdata", "hog_meta.csv", package = "GenelandHandleR")
+meta <- read.csv(exa_meta)
+
+barProb2 <- PlotProbMembership(path.mcmc=folders[TopRun], pal="Set1", 
+                               metadata=meta, orderBy="Location")
+barProb2
+
+#### Plot to map ####
+library(sf)
+library(ggspatial)
+library(data.table)
+
+# path to shape file
+exa_shapeFile <- file.path(system.file("extdata", "gippsland", package = "GenelandHandleR"), "gippsland.shp")
+vic<- read_sf(exa_shapeFile)
+# Everything need to be in the same CRS. Function uses GDA94 / MGA zone 55 (EPSG code 28355)
+m <- vic %>% st_transform(28355)
+
+# Labels: need to be one label per site and in the same coordinate system as shape file
+names(meta)
+labels <- data.table(meta[, c(1:2,36:37)])
+setnames(labels, names(labels)[1:2], c("Sample", "Location"))
+# Subset of locations
+keyLocs <- c("Bengworden", "Blond Bay", "Boole Poole", "Clydebank",                
+             "Dutson Downs", "Gelliondale", "Golden Beach", 
+             "Hedley", 
+             #"Lake Victoria", 
+             #"Lake Wellington", 
+             "Loch Sport", 
+             #"Port Welshpool", 
+             "Snake Island", "Stratford", "Sunday Island", 
+             "Welshpool", 
+             "Wilsons Prom", "Yanakie")
+
+setkey(labels, Location)
+# Pick one label for location
+labels <- labels[J(unique(keyLocs)), mult="first"]
+
+# convert to EPSG:28355
+coord <- labels[, .(Long, Lat)]
+coordinates(coord) <- c("Long", "Lat" )
+proj4string(coord) <- CRS("+proj=longlat +datum=WGS84")
+
+coord_GDA <- spTransform(coord, CRS("+proj=utm +zone=55 +south +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs"))
+coord_GDA <-as.data.frame(coord_GDA)
+labels[, Long:=coord_GDA$Long]
+labels[, Lat:=coord_GDA$Lat]
+
+PlotSample2Map(dirIn = folders[TopRun],map = m, #id = "id", 
+                txt=labels,
+               #  xmin = 145.7, xmax = 149.4, ymin = -39.2, ymax = -37.7, 
+               w=2000, h=2000, a=0.5)
+
+```
+
