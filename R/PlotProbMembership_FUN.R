@@ -2,7 +2,7 @@
 #' 
 #' @param path.mcmc Path where the outputs are stored
 #' @param pal Palette to use to colour code membership
-#' @param matadata Optional: data.frame with nindiv lines with metadata associated with samples 
+#' @param metadata Optional: data.frame with nindiv lines with metadata associated with samples 
 #'       as columns. One of these can be used to sort the samples
 #' @param orderBy Optional: name of the column in metadata to order the samples by   
 #' @import data.table

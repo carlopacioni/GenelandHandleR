@@ -101,7 +101,7 @@ run_paral_geneland <- function(nrun, ncores=NULL, model="Correlated",
   
   # Gelman's diagnostic
   g.diag <- gelman.diag(logs.mcmc, autoburnin=FALSE, multivariate = F)
-  message("Gelman snd Rubin's convergence diagnostic")
+  message("Gelman and Rubin's convergence diagnostic")
   print(g.diag$psrf[3:5,])
   write.csv(g.diag$psrf[3:5,], file=file.path(path, paste(main.dir, "Gelman.diag.csv", sep="_")))
   

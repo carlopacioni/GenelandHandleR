@@ -2,6 +2,7 @@
 #' 
 #' @param dirIn the directory path where the mcmc results are saved
 #' @param map a map of class sf
+#' @param txt data.frame with Lat, Long and Location columns to print labels on map
 #' @param pal palette for sample colours
 #' @param UTM Whether the coordinats provided in the analysis to Geneland are in UTM (TRUE) 
 #'     or GDS84 / MGA 55 (FALSE)
