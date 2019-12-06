@@ -13,6 +13,7 @@ LazyData: true
 Imports:
     coda,
     data.table (>= 1.11.4),
+    Geneland,
     ggplot2,
     ggspatial,
     ggrepel,
@@ -21,7 +22,6 @@ Imports:
     rgdal,
     sf
 Suggests:
-    Geneland,
     knitr,
     rmarkdown,
     devtools,
