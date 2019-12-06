@@ -11,10 +11,10 @@ PlotProbMembership(path.mcmc, pal = "Set1", metadata, orderBy)
 
 \item{pal}{Palette to use to colour code membership}
 
-\item{orderBy}{Optional: name of the column in metadata to order the samples by}
-
-\item{matadata}{Optional: data.frame with nindiv lines with metadata associated with samples 
+\item{metadata}{Optional: data.frame with nindiv lines with metadata associated with samples 
 as columns. One of these can be used to sort the samples}
+
+\item{orderBy}{Optional: name of the column in metadata to order the samples by}
 }
 \description{
 Generate a bar plot with probability of membership for each sample

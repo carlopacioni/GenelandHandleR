@@ -20,6 +20,8 @@ PlotSample2Map(
 
 \item{map}{a map of class sf}
 
+\item{txt}{data.frame with Lat, Long and Location columns to print labels on map}
+
 \item{pal}{palette for sample colours}
 
 \item{UTM}{Whether the coordinats provided in the analysis to Geneland are in UTM (TRUE) 
