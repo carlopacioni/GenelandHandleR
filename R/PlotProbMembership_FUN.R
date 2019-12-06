@@ -1,13 +1,14 @@
 #' Generate a bar plot with probability of membership for each sample
 #' 
-#' path.mcmc Path where the outputs are stored
-#' pal Palette to use to colour code membership
-#' matadata Optional: data.frame with nindiv lines with metadata associated with samples 
+#' @param path.mcmc Path where the outputs are stored
+#' @param pal Palette to use to colour code membership
+#' @param matadata Optional: data.frame with nindiv lines with metadata associated with samples 
 #'       as columns. One of these can be used to sort the samples
-#' orderBy Optional: name of the column in metadata to order the samples by     
+#' @param orderBy Optional: name of the column in metadata to order the samples by   
+#' @import data.table
+#' @import ggplot2
+#' @export  
 PlotProbMembership <- function(path.mcmc, pal="Set1", metadata, orderBy) {
-  library(data.table)
-  library(ggplot2)
   probInd <- fread(file.path(path.mcmc, "proba.pop.membership.indiv.txt"))
   keep <- probInd[, lapply(.SD, sum)]
   probInd <- probInd[, as.logical(keep[1,]), with=FALSE]

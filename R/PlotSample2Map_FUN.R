@@ -1,21 +1,23 @@
 #' Plot samples to map colour-coded as for cluster asignment
 #' 
-#' dirIn the directory path where the mcmc results are saved
-#' map a map of class sf
-#' pal palette for sample colours
-#' UTM Whether the coordinats provided in the analysis to Geneland are in UTM (TRUE) 
+#' @param dirIn the directory path where the mcmc results are saved
+#' @param map a map of class sf
+#' @param pal palette for sample colours
+#' @param UTM Whether the coordinats provided in the analysis to Geneland are in UTM (TRUE) 
 #'     or GDS84 / MGA 55 (FALSE)
-#' w, h the extent of the jitter for sample locations to be plotted. NULL (default) if none
-#' a set alpha for transparency
+#' @param w,h the extent of the jitter for sample locations to be plotted. NULL (default) if none
+#' @param a set alpha for transparency
+#' @import ggplot2
+#' @import maps
+#' @import rgdal
+#' @import data.table
+#' @import sf
+#' @import ggrepel
+#' @import ggspatial
+#' @export
 PlotSample2Map <- function(dirIn, map=NULL, txt,
                             pal="Set1", UTM=TRUE, w=NULL, h=NULL, a=0.2) {
-  library(ggplot2)
-  library(maps)
-  library(rgdal)
-  library(data.table)
-  library(sf)
-  library(ggrepel)
-  library(ggspatial)
+  
   dat <- fread(file.path(dirIn, "modal.pop.indiv.txt"))
   setnames(dat, c("Long", "Lat", "Cluster"))
   

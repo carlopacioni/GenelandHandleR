@@ -4,41 +4,57 @@ library(ggplot2)
 library(data.table)
 library(parallel)
 
-#filter.null.alleles
-#miss.loc
-#pop.size
 
-#----------------------------------------------------------------------------#
-#### Helper functions ####
-#----------------------------------------------------------------------------#
 #' Run Geneland in parallel
-#' nrun Number of parallel runs
-#' ncores Number of cores to use. If default (NULL) are automatically selected
-#' model Whether "Correlated" or "Uncorrelated"
-#' path Path to root directory where to store results
-#' main.dir Directory name where to store output (within path)
-#' spatial Whether to use the spatial model
-#' GEN Input genotypes (for now only codominant are available)
-#' COORD Coordinates
-#' jitter Spatial uncertainty
-#' nxdom,nydom Number of pixel for discretization of the spatial domain in the 
+#' 
+#' 
+#' Run \code{nrun}s in parallel with either Geneland correlated or uncorrelated 
+#'   model with non-admixture. 
+#' 
+#' Reports on screen ESS for each run, Gelman and Rubin's diagnostics, 
+#'     summary table of the results and Null allele frequencies if requested.
+#' 
+#' @param nrun Number of parallel runs
+#' @param ncores Number of cores to use. If default (NULL) are automatically selected
+#' @param model Whether "Correlated" or "Uncorrelated"
+#' @param path Path to root directory where to store results
+#' @param main.dir Directory name where to store output (within path)
+#' @param spatial Whether to use the spatial model
+#' @param gen Input genotypes (for now only codominant are available)
+#' @param coords Coordinates
+#' @param jitter Spatial uncertainty
+#' @param nxdom,nydom Number of pixel for discretization of the spatial domain in the 
 #'         horizontal and vertical direction respectively. If "auto" is automatically set
 #'         otherwise a numeric vector of length=1
-#' burnin Burnin
-#' POPSMAX Maximum number of pops
-#' POPINIT Initial number of pops
-#' POPMIN Minimum number of pops
-#' ITR Number of iteration
-#' THN Thinning
-#' nullMatrix A matrix with nindiv lines and nloc columns of 0 or 1. For each 
+#' @param burnin Burnin
+#' @param npopmax Maximum number of pops
+#' @param npopinit Initial number of pops
+#' @param npopmin Minimum number of pops
+#' @param niter Number of iterations
+#' @param nthin Thinning
+#' @param nullMatrix From Geneland help file - A matrix with nindiv lines and nloc columns of 0 or 1. For each 
 #'          individual, at each locus it says if the locus is genuinely missing 
 #'          (no attempt to measure it). This info is used under the option 
 #'          filterNA=TRUE do decide how a double missing value should be treated 
 #'          (genuine missing data or double null allele).
+#' @return A list with the following elements:
+#'      \itemize{
+#'        \item Output_paths The path to the output files
+#'        \item ESS Effective Sample Size
+#'        \item GelmansDiagnostic= Gelman and Rubin diagnostic
+#'        \item SummaryReps A summary of the runs
+#'        \item Null null allele frequencies if requested toherwise \code{NULL}
+#'        }
+#'   Also, the same data are save as files in the \code{path} directory
+#' @import coda
+#' @import parallel
+#' @import Geneland
+#' @import data.table
+#' @export
 run_paral_geneland <- function(nrun, ncores=NULL, model="Correlated", 
                                main.dir="output_corr", spatial=TRUE, path,
-                               GEN, COORD, jitter=0,  nxdom="auto", nydom="auto",
-                               burnin, POPSMAX, POPINIT, POPMIN, ITR, THN, nullMatrix=NULL) {
+                               gen, coords, jitter=0,  nxdom="auto", nydom="auto",
+                               burnin, npopmax, npopinit, npopmin, niter, nthin, nullMatrix=NULL) {
   library(parallel)
   if(is.null(ncores)){
     ncores <- detectCores() 
@@ -50,25 +66,25 @@ run_paral_geneland <- function(nrun, ncores=NULL, model="Correlated",
   clusterSetRNGStream(cl, iseed=NULL)
   clusterEvalQ(cl, library("Geneland"))
   clusterExport(cl, 
-                varlist=c("GEN", "COORD", "nrun", "folders", "burnin", "ITR", "THN",
-                          "POPSMAX", "POPINIT", "POPMIN", "nxdom", "nydom",
+                varlist=c("gen", "coords", "nrun", "folders", "burnin", "niter", "nthin",
+                          "npopmax", "npopinit", "npopmin", "nxdom", "nydom",
                           "model", "spatial", "jitter", "nullMatrix"), 
                 envir= #.GlobalEnv
                   environment()) 
   on.exit(stopCluster(cl))
   st <-  system.time(
     l <- parLapply(cl, seq_len(nrun), paral_geneland, folders=folders,
-                   GEN=GEN, COORD=COORD, 
+                   gen=gen, coords=coords, 
                    varnpop=TRUE, 
-                   npopmin=POPMIN,
-                   npopinit=POPINIT,
-                   npopmax=POPSMAX,
+                   npopmin=npopmin,
+                   npopinit=npopinit,
+                   npopmax=npopmax,
                    spatial=spatial, 
                    freq.model=model, 
                    nxdom=nxdom, nydom=nydom,
                    burnin=burnin,
-                   ITR=ITR,
-                   THN=THN,
+                   niter=niter,
+                   nthin=nthin,
                    jitter=jitter,
                    nullMatrix=nullMatrix)   # parallel execution
   )
@@ -78,7 +94,7 @@ run_paral_geneland <- function(nrun, ncores=NULL, model="Correlated",
   logs <- lapply(folders, read.logs)
   logs.mcmc <- as.mcmc.list(make.mcmc(logs))
   
-  BurnIn <- burnin/THN
+  BurnIn <- burnin/nthin
   logs.mcmc.bin.rm <- rm.burn(logs.mcmc, burn=BurnIn)
   
   # ESS
@@ -139,42 +155,42 @@ run_paral_geneland <- function(nrun, ncores=NULL, model="Correlated",
 
 
 # Execute Geneland and collate results in log
-paral_geneland <- function(irun, folders, GEN, COORD, varnpop=TRUE, 
+paral_geneland <- function(irun, folders, gen, coords, varnpop=TRUE, 
                            spatial=TRUE, freq.model, jitter,
                            nxdom=nxdom, nydom=nydom,
                            burnin=100000,
                            npopinit=1,
                            npopmin=1,
                            npopmax=5,
-                           ITR=1000000,
-                           THN=100,
+                           niter=1000000,
+                           nthin=100,
                            nullMatrix) {
   if(nxdom=="auto"&nydom=="auto") {
     nxdom <- 400
-    nydom <- round(nxdom * (max(COORD[,2]) - min(COORD[,2])) /
-      (max(COORD[,1]) - min(COORD[,1])), digits=0)
+    nydom <- round(nxdom * (max(coords[,2]) - min(coords[,2])) /
+      (max(coords[,1]) - min(coords[,1])), digits=0)
   }
   path.mcmc<-paste0(folders[irun], "/")
-  MCMC(geno.dip.codom=GEN,
-       coordinates=COORD, 
+  MCMC(geno.dip.codom=gen,
+       coordinates=coords, 
        varnpop=varnpop,
        npopmin=npopmin,
        npopinit=npopinit,
        npopmax=npopmax,
        spatial=spatial, 
        freq.model=freq.model,
-       nit=ITR,
-       thinning=THN,
+       nit=niter,
+       thinning=nthin,
        path.mcmc=path.mcmc,
        delta.coord=jitter,
        miss.loc=nullMatrix,
        write.size.pop=TRUE)
   
-  PostProcessChain(coordinates=COORD, 
+  PostProcessChain(coordinates=coords, 
                    path.mcmc=path.mcmc, 
                    nxdom=nxdom, 
                    nydom=nydom, 
-                   burnin=burnin/THN)
+                   burnin=burnin/nthin)
   
   log.likel <- read.table(paste0(path.mcmc, "log.likelihood.txt"))
   iteration <- 1:nrow(log.likel)
@@ -191,8 +207,8 @@ paral_geneland <- function(irun, folders, GEN, COORD, varnpop=TRUE,
 
 #### Parallel admix geneland ####
 paral_adm_geneland <- function(nrun, ncores=NULL, adm="adm", 
-                               GEN, COORD, path.mcmc.noadm, 
-                               ITR, THN) {
+                               gen, coords, path.mcmc.noadm, 
+                               niter, nthin) {
   library(parallel)
   if(is.null(ncores)){
     ncores <- detectCores() 
@@ -205,14 +221,14 @@ paral_adm_geneland <- function(nrun, ncores=NULL, adm="adm",
   clusterSetRNGStream(cl, iseed=NULL)
   clusterEvalQ(cl, library("Geneland"))
   clusterExport(cl, 
-                varlist=c("GEN",  "folders", "ITR", "THN", "path.mcmc.noadm", "COORD"), 
+                varlist=c("gen",  "folders", "niter", "nthin", "path.mcmc.noadm", "coords"), 
                 envir= #.GlobalEnv
                   environment()) 
   st <-  system.time(
     l <- parLapply(cl, paste0(folders, "/"), HZ, 
-                   coordinates=COORD, geno.dip.codom=GEN, 
+                   coordinates=coords, geno.dip.codom=gen, 
                    path.mcmc.noadm=paste0(path.mcmc.noadm, "/"),
-                   nit=ITR, thinning=THN, geno.dip.dom=NULL,
+                   nit=niter, thinning=nthin, geno.dip.dom=NULL,
                    geno.hap=NULL,
                    dist.IC=NULL,
                    allele.freq=NULL,
@@ -237,6 +253,13 @@ paral_adm_geneland <- function(nrun, ncores=NULL, adm="adm",
 
 
 #### Create folders for each run in output ####
+#' Create folders for each run in output
+#' 
+#' Used internally, but can be used also to re-create the paths to results
+#' 
+#' @param main Root directory
+#' @param nrun Number of runs
+#' @export
 make.folders <- function(main, nrun) {
   folders<-paste0(main, "R", 1:nrun)
   lapply(folders, dir.create, showWarnings=FALSE, recursive=FALSE, mode="0777") 
@@ -273,19 +296,22 @@ MODE <- function(x) {
 }
 
 count.vals<-function(i) {
-  length(which(Ind.clust.list[[i]]==clust.mode.list[[i]]))/(ITR/THN)
+  length(which(Ind.clust.list[[i]]==clust.mode.list[[i]]))/(niter/nthin)
   }
 
 # Make npopplots
-make.npop.plots <- function(d, bur=burnin, th=THN) {
+#' Make a plot of the sampled number of clusters during the chain
+#' 
+#' 
+make.npop.plots <- function(d, bur=burnin, th=nthin) {
   on.exit(dev.off())
   pdf(paste0(d, "Plotnpop", ".pdf"), width=15, height=7)
   Plotnpop(path.mcmc=d, burnin=bur/th)
 }
 
 
-write.Fst <- function(GEN,dirIn, digs=3) {
-  Fst <- Fstat.output(genotypes=GEN,path.mcmc=dirIn)
+write.Fst <- function(gen,dirIn, digs=3) {
+  Fst <- Fstat.output(genotypes=gen,path.mcmc=dirIn)
   fst <- do.call(rbind, Fst)
   fst <- round(fst, digits=digs)
   row.names(fst) <- c("Fis", rep("Fst", length.out=nrow(fst)-1))
