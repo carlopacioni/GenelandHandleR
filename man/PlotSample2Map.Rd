@@ -15,12 +15,20 @@ PlotSample2Map(
   a = 0.2
 )
 }
+\arguments{
+\item{dirIn}{the directory path where the mcmc results are saved}
+
+\item{map}{a map of class sf}
+
+\item{pal}{palette for sample colours}
+
+\item{UTM}{Whether the coordinats provided in the analysis to Geneland are in UTM (TRUE) 
+or GDS84 / MGA 55 (FALSE)}
+
+\item{w, h}{the extent of the jitter for sample locations to be plotted. NULL (default) if none}
+
+\item{a}{set alpha for transparency}
+}
 \description{
-dirIn the directory path where the mcmc results are saved
-map a map of class sf
-pal palette for sample colours
-UTM Whether the coordinats provided in the analysis to Geneland are in UTM (TRUE) 
-    or GDS84 / MGA 55 (FALSE)
-w, h the extent of the jitter for sample locations to be plotted. NULL (default) if none
-a set alpha for transparency
+Plot samples to map colour-coded as for cluster asignment
 }

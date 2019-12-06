@@ -2,30 +2,7 @@
 % Please edit documentation in R/geneland_parallel_FUNs.R
 \name{run_paral_geneland}
 \alias{run_paral_geneland}
-\title{Run Geneland in parallel
-nrun Number of parallel runs
-ncores Number of cores to use. If default (NULL) are automatically selected
-model Whether "Correlated" or "Uncorrelated"
-path Path to root directory where to store results
-main.dir Directory name where to store output (within path)
-spatial Whether to use the spatial model
-GEN Input genotypes (for now only codominant are available)
-COORD Coordinates
-jitter Spatial uncertainty
-nxdom,nydom Number of pixel for discretization of the spatial domain in the 
-        horizontal and vertical direction respectively. If "auto" is automatically set
-        otherwise a numeric vector of length=1
-burnin Burnin
-POPSMAX Maximum number of pops
-POPINIT Initial number of pops
-POPMIN Minimum number of pops
-ITR Number of iteration
-THN Thinning
-nullMatrix A matrix with nindiv lines and nloc columns of 0 or 1. For each 
-         individual, at each locus it says if the locus is genuinely missing 
-         (no attempt to measure it). This info is used under the option 
-         filterNA=TRUE do decide how a double missing value should be treated 
-         (genuine missing data or double null allele).}
+\title{Run Geneland in parallel}
 \usage{
 run_paral_geneland(
   nrun,
@@ -34,43 +11,77 @@ run_paral_geneland(
   main.dir = "output_corr",
   spatial = TRUE,
   path,
-  GEN,
-  COORD,
+  gen,
+  coords,
   jitter = 0,
   nxdom = "auto",
   nydom = "auto",
   burnin,
-  POPSMAX,
-  POPINIT,
-  POPMIN,
-  ITR,
-  THN,
+  npopmax,
+  npopinit,
+  npopmin,
+  niter,
+  nthin,
   nullMatrix = NULL
 )
 }
+\arguments{
+\item{nrun}{Number of parallel runs}
+
+\item{ncores}{Number of cores to use. If default (NULL) are automatically selected}
+
+\item{model}{Whether "Correlated" or "Uncorrelated"}
+
+\item{main.dir}{Directory name where to store output (within path)}
+
+\item{spatial}{Whether to use the spatial model}
+
+\item{path}{Path to root directory where to store results}
+
+\item{gen}{Input genotypes (for now only codominant are available)}
+
+\item{coords}{Coordinates}
+
+\item{jitter}{Spatial uncertainty}
+
+\item{nxdom, nydom}{Number of pixel for discretization of the spatial domain in the 
+horizontal and vertical direction respectively. If "auto" is automatically set
+otherwise a numeric vector of length=1}
+
+\item{burnin}{Burnin}
+
+\item{npopmax}{Maximum number of pops}
+
+\item{npopinit}{Initial number of pops}
+
+\item{npopmin}{Minimum number of pops}
+
+\item{niter}{Number of iterations}
+
+\item{nthin}{Thinning}
+
+\item{nullMatrix}{From Geneland help file - A matrix with nindiv lines and nloc columns of 0 or 1. For each 
+individual, at each locus it says if the locus is genuinely missing 
+(no attempt to measure it). This info is used under the option 
+filterNA=TRUE do decide how a double missing value should be treated 
+(genuine missing data or double null allele).}
+}
+\value{
+A list with the following elements:
+     \itemize{
+       \item Output_paths The path to the output files
+       \item ESS Effective Sample Size
+       \item GelmansDiagnostic= Gelman and Rubin diagnostic
+       \item SummaryReps A summary of the runs
+       \item Null null allele frequencies if requested toherwise \code{NULL}
+       }
+  Also, the same data are save as files in the \code{path} directory
+}
 \description{
-Run Geneland in parallel
-nrun Number of parallel runs
-ncores Number of cores to use. If default (NULL) are automatically selected
-model Whether "Correlated" or "Uncorrelated"
-path Path to root directory where to store results
-main.dir Directory name where to store output (within path)
-spatial Whether to use the spatial model
-GEN Input genotypes (for now only codominant are available)
-COORD Coordinates
-jitter Spatial uncertainty
-nxdom,nydom Number of pixel for discretization of the spatial domain in the 
-        horizontal and vertical direction respectively. If "auto" is automatically set
-        otherwise a numeric vector of length=1
-burnin Burnin
-POPSMAX Maximum number of pops
-POPINIT Initial number of pops
-POPMIN Minimum number of pops
-ITR Number of iteration
-THN Thinning
-nullMatrix A matrix with nindiv lines and nloc columns of 0 or 1. For each 
-         individual, at each locus it says if the locus is genuinely missing 
-         (no attempt to measure it). This info is used under the option 
-         filterNA=TRUE do decide how a double missing value should be treated 
-         (genuine missing data or double null allele).
+Run \code{nrun}s in parallel with either Geneland correlated or uncorrelated 
+  model with non-admixture.
+}
+\details{
+Reports on screen ESS for each run, Gelman and Rubin's diagnostics, 
+    summary table of the results and Null allele frequencies if requested.
 }
