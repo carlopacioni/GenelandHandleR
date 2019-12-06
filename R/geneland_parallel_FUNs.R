@@ -1,10 +1,3 @@
-library(Geneland)
-library(coda)
-library(ggplot2)
-library(data.table)
-library(parallel)
-
-
 #' Run Geneland in parallel
 #' 
 #' 

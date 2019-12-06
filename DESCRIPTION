@@ -21,7 +21,7 @@ Imports:
     rgdal,
     sf
 Suggests:
-    geneland,
+    Geneland,
     knitr,
     rmarkdown,
     devtools,
